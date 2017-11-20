@@ -2,8 +2,16 @@
 
 import RPi.GPIO as gpio
 import time
+import bluetooth as bl
+
+soc = bl.BluetoothSocket(bl.RFCOMM)
+soc.bind(("", 1))
+soc.listen(1)
+cliente,direccion = soc.accept()
+
 #Metodo que inicializa los GPIO y los estados de los LED's
 def inicializar():
+        
 	gpio.setmode(gpio.BCM)
 	gpio.setwarnings(False)
 	#GPIO 17, 27 y 22 seran las luces roja, amarilla y verde de la primera interseccion (sur-norte/norte-sur) respectivamente
@@ -33,8 +41,12 @@ def inicializar():
 def ciclo_normal():
 	print 'Ciclo Normal'
 	while True:
+                
+                entrada = cliente.recv(1024)
+                #if entrada == '1':
+                 #   print 'SE ENTRO UN 1'
 		#Si se detecta una interrupcion, se llama al metodo ciclo_interrupcion()
-		if(gpio.input(18)):
+		if cliente.recv(1024) == '1':
 			print 'Inicia interrupcion'
 			ciclo_interrupcion()
 
@@ -42,7 +54,7 @@ def ciclo_normal():
 		gpio.output(22,gpio.HIGH)
 		gpio.output(25,gpio.HIGH)
 		time.sleep(3)
-		if(gpio.input(18)):
+		if entrada == '1':
                         print 'Inicia interrupcion'
                         ciclo_interrupcion()
 
@@ -54,7 +66,7 @@ def ciclo_normal():
 		time.sleep(1)
 		gpio.output(27,gpio.LOW)
 		gpio.output(24,gpio.LOW)
-		if(gpio.input(18)):
+		if(entrada == '1'):
                         print 'Inicia interrupcion'
                         ciclo_interrupcion()
 
@@ -64,7 +76,7 @@ def ciclo_normal():
 		time.sleep(3)
 		gpio.output(17,gpio.LOW)
 		gpio.output(23,gpio.LOW)
-		if(gpio.input(18)):
+		if(entrada == '1'):
                         print 'Inicia interrupcion'
                         ciclo_interrupcion()
 		print 'Luz amarilla'
@@ -73,7 +85,7 @@ def ciclo_normal():
 		time.sleep(1)
 		gpio.output(27,gpio.LOW)
 		gpio.output(24,gpio.LOW)
-		if(gpio.input(18)):
+		if(entrada == '1'):
                         print 'Inicia interrupcion'
                         ciclo_interrupcion()
 
@@ -112,6 +124,11 @@ def ciclo_interrupcion():
 	print
 	ciclo_normal()
 
-
-inicializar()
-ciclo_normal()
+if __name__ == '__main__':
+    try:
+        inicializar()
+        ciclo_normal()
+    except KeyboardInterrupt, RuntimeError:
+        print
+        print 'FINALIZANDO SIMULACION...'
+        gpio.cleanup()
